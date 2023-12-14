@@ -27,4 +27,7 @@ def scrape_individual(url):
             monthlyCapList.append(monthly_cap)
             spendList.append(spend)
     
+    # need to call GPT to split categorize the categoryList, ie. we want to split 'Dining, Entertainment' into ['Dining', 'Entertainment']
+    # also need to call GPT to convert text like 'from RM1500 or above' to range of numbers [1500, float('inf')]
+    
     return [categoryList, cashbackPercentageList, monthlyCapList, spendList]
