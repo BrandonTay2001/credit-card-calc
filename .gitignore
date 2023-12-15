@@ -25,3 +25,5 @@ webapp/uploads/
 env/
 lib/
 bin/
+# Workspace
+*.code-workspace

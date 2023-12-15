@@ -1,0 +1,6 @@
+openai
+pymongo
+requests
+bs4
+python-dotenv
+flask

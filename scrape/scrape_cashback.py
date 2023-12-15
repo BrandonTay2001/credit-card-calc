@@ -1,6 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
 from scrape_cashback_table import scrape_individual
+import openai
+import pymongo
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 url = "https://ringgitplus.com/en/credit-card/cashback/"
 
@@ -19,4 +25,3 @@ for li in li_tags:
     links_and_names[name] = link
     card_info = scrape_individual(link)
     print(card_info)
-
