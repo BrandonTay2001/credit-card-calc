@@ -1,18 +1,15 @@
 {
     "_default": {
         "1": {
-            "online dining": null,
             "petrol": "Petrol",
             "petronas": "Petrol",
             "shell": "Petrol",
             "bhp": "Petrol",
             "groceries": "Groceries",
-            "AEON": "Groceries",
+            "aeon": "Groceries",
             "grocery": "Groceries",
             "online": "Online Shopping",
             "dining": "Dining",
-            "online shopping": "Online Shopping",
-            "online spending": "Online Shopping",
             "supermarket": "Groceries",
             "local": "Others",
             "all": "Others",

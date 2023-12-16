@@ -38,7 +38,6 @@ def scrape_individual(url):
     tableList = []
 
     for i, tr in enumerate(tr_tags):
-        rowList = []
         
         category = tr.find("td").text
         cashback_percentage = tr.find("td").find_next("td").text
@@ -47,17 +46,28 @@ def scrape_individual(url):
 
         entryCategories = []
 
+        # remove punctuations from category
+        category = re.sub(r'[^\w\s]', ' ', category)
+        categoryTextArray = category.lower().split()
+
         # loop through mapping and add value to categoryList
         for key in mapping[0]:
-            if key in category.lower() and mapping[0][key] != None:
-                if mapping[0][key] == 'Others' and 'overseas' in category.lower():
+            if key in categoryTextArray and mapping[0][key] != None:
+                if mapping[0][key] == 'Others' and 'overseas' in categoryTextArray:
+                    continue
+                if mapping[0][key] in entryCategories:
                     continue
                 entryCategories.append(mapping[0][key])
-        if not entryCategories: # edge case
+        if 'Others' in entryCategories and ('exclude' in categoryTextArray or 'excludes' in categoryTextArray): # edge case 1 - exclude others
+            entryCategories = ['Others']
+        if not entryCategories: # edge case 2 - no categories
             entryCategories.append('Others')
 
         # clean the cashback_percentage
         cashback_percentage = float(cashback_percentage.replace('%', ''))
+
+        # remove comma from monthly_cap
+        monthly_cap = monthly_cap.replace(',', '')
 
         # clean the monthly_cap
         if 'RM' in monthly_cap:
@@ -68,9 +78,7 @@ def scrape_individual(url):
         # clean the spend
         spend = transform_text(spend)
 
-        # add to lists
-        rowList.append([entryCategories, cashback_percentage, monthly_cap, spend])
-        
-        tableList.append(rowList)
+        # add to list
+        tableList.append([entryCategories, cashback_percentage, monthly_cap, spend])
 
     return tableList

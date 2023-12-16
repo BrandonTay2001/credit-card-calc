@@ -28,25 +28,27 @@ for li in li_tags:
     link = "https://ringgitplus.com" + a_tag["href"]
     name = a_tag.text
     links_and_names[name] = link
-    rows = scrape_individual(link)
+    individual_table_rows = scrape_individual(link)
     
     seen = set()
     
     # if name is not in db, add it
-    if col.find_one({"name": name}) == None:
-        col.insert_one({"name": name, "link": link, "categories": {}})
+    # if col.find_one({"name": name}) == None:
+    #     col.insert_one({"name": name, "link": link, "categories": {}})
 
     categories = {}
 
-    for row in rows:
+    for row in individual_table_rows:
         # seen key: (categories, spend)
-        if (tuple(row[0]), row[3]) in seen:
+        if (tuple(row[0]), tuple(row[3])) in seen:
             continue
-        seen.add((row[0], row[3]))
+        seen.add((tuple(row[0]), tuple(row[3])))
         
         if tuple(row[0]) in categories:
             categories[tuple(row[0])].append({"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]})
         else:
             categories[tuple(row[0])] = [{"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]}]
-        
-    col.update_one({"name": name}, {"$set": {"categories": categories}})
+    
+    print(name)
+    print(categories)
+    # col.update_one({"name": name}, {"$set": {"categories": categories}})
