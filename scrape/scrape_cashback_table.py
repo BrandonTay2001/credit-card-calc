@@ -35,44 +35,42 @@ def scrape_individual(url):
     tbody = table_wrapper.find("tbody")
     tr_tags = tbody.find_all("tr")
 
-    categoryList = []
-    cashbackPercentageList = []
-    monthlyCapList = []
-    spendList = []
+    tableList = []
 
-    for tr in tr_tags:
-        for tr in tr_tags:
-            category = tr.find("td").text
-            cashback_percentage = tr.find("td").find_next("td").text
-            monthly_cap = tr.find("td").find_next("td").find_next("td").text
-            spend = tr.find("td").find_next("td").find_next("td").find_next("td").text
+    for i, tr in enumerate(tr_tags):
+        rowList = []
+        
+        category = tr.find("td").text
+        cashback_percentage = tr.find("td").find_next("td").text
+        monthly_cap = tr.find("td").find_next("td").find_next("td").text
+        spend = tr.find("td").find_next("td").find_next("td").find_next("td").text
 
-            entryCategories = []
+        entryCategories = []
 
-            # loop through mapping and add value to categoryList
-            for key in mapping[0]:
-                if key in category.lower() and mapping[0][key] != None:
-                    if mapping[0][key] == 'Others' and 'overseas' in category.lower():
-                        continue
-                    entryCategories.append(mapping[0][key])
+        # loop through mapping and add value to categoryList
+        for key in mapping[0]:
+            if key in category.lower() and mapping[0][key] != None:
+                if mapping[0][key] == 'Others' and 'overseas' in category.lower():
+                    continue
+                entryCategories.append(mapping[0][key])
+        if not entryCategories: # edge case
+            entryCategories.append('Others')
 
-            # clean the cashback_percentage
-            cashback_percentage = float(cashback_percentage.replace('%', ''))
+        # clean the cashback_percentage
+        cashback_percentage = float(cashback_percentage.replace('%', ''))
 
-            # clean the monthly_cap
-            if 'RM' in monthly_cap:
-                monthly_cap = float(monthly_cap.replace('RM', ''))
-            else:   # no cap
-                monthly_cap = float('inf')
+        # clean the monthly_cap
+        if 'RM' in monthly_cap:
+            monthly_cap = float(monthly_cap.replace('RM', ''))
+        else:   # no cap
+            monthly_cap = float('inf')
 
-            # clean the spend
-            spend = transform_text(spend)
+        # clean the spend
+        spend = transform_text(spend)
 
-            # add to lists
-            categoryList.append(entryCategories)
-            cashbackPercentageList.append(cashback_percentage)
-            monthlyCapList.append(monthly_cap)
-            spendList.append(spend)
+        # add to lists
+        rowList.append([entryCategories, cashback_percentage, monthly_cap, spend])
+        
+        tableList.append(rowList)
 
-    return [categoryList, cashbackPercentageList, monthlyCapList, spendList]
-
+    return tableList
