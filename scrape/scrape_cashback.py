@@ -7,9 +7,14 @@ import os
 from dotenv import load_dotenv
 
 from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv())
+import os
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(dotenv_path)
 
-client = pymongo.MongoClient(os.environ.get("MONGO_URL"))
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+
+client = pymongo.MongoClient(f"mongodb+srv://{DB_USER}:{DB_PASS}@hentaicluster.hcelnlh.mongodb.net/?retryWrites=true&w=majority")
 db = client["cardCalc"]
 col = db["cashback"]
 
@@ -30,25 +35,28 @@ for li in li_tags:
     links_and_names[name] = link
     individual_table_rows = scrape_individual(link)
     
-    seen = set()
+    seen_pair, seen_categories = set(), set()
     
     # if name is not in db, add it
-    # if col.find_one({"name": name}) == None:
-    #     col.insert_one({"name": name, "link": link, "categories": {}})
+    if col.find_one({"name": name}) == None:
+        col.insert_one({"name": name, "link": link, "categories": []})
 
-    categories = {}
+    categories = []
 
     for row in individual_table_rows:
         # seen key: (categories, spend)
-        if (tuple(row[0]), tuple(row[3])) in seen:
+        if (tuple(row[0]), tuple(row[3])) in seen_pair:
             continue
-        seen.add((tuple(row[0]), tuple(row[3])))
-        
-        if tuple(row[0]) in categories:
-            categories[tuple(row[0])].append({"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]})
+        seen_pair.add((tuple(row[0]), tuple(row[3])))
+
+        if tuple(row[0]) in seen_categories:
+            for category in categories:
+                if category["individual_categories"] == row[0]:
+                    category["tier"].append(
+                        {"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]})
+            seen_categories.add(tuple(row[0]))
         else:
-            categories[tuple(row[0])] = [{"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]}]
+            categories = [{"individual_categories": row[0], "tier": [
+                {"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]}]}]
     
-    print(name)
-    print(categories)
-    # col.update_one({"name": name}, {"$set": {"categories": categories}})
+    col.update_one({"name": name}, {"$set": {"categories": categories}})
