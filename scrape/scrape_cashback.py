@@ -52,11 +52,10 @@ for li in li_tags:
         if tuple(row[0]) in seen_categories:
             for category in categories:
                 if category["individual_categories"] == row[0]:
-                    category["tier"].append(
-                        {"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]})
-            seen_categories.add(tuple(row[0]))
+                    category["tier"].insert(0, {"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]})
         else:
-            categories = [{"individual_categories": row[0], "tier": [
-                {"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]}]}]
+            categories.append({"individual_categories": row[0], "tier": [
+                {"cashback_percentage": row[1], "monthly_cap": row[2], "spend": row[3]}]})
+        seen_categories.add(tuple(row[0]))
     
     col.update_one({"name": name}, {"$set": {"categories": categories}})
