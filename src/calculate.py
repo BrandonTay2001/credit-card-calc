@@ -22,10 +22,11 @@ class LimitedHeap:
         self.heap = []
 
     def push(self, item):
-        if len(self.heap) < self.limit:
-            heapq.heappush(self.heap, item)
-        else:
-            heapq.heappushpop(self.heap, item)
+        if item[0] == 0:
+            return
+        heapq.heappush(self.heap, item)
+        if len(self.heap) > self.limit:
+            heapq.heappop(self.heap)
 
     def get_heap(self):
         return self.heap
@@ -44,33 +45,33 @@ def calculate_cashback_for_category(spend_amount, tiers):
 
 def calculate(petrolSpending, groceriesSpending, onlineSpending, diningSpending, otherSpending):
     category_to_spend = {
-        "Petrol": petrolSpending, "Groceries": groceriesSpending, "Online": onlineSpending,
-        "Dining": diningSpending, "Other": otherSpending
+        "Petrol": petrolSpending, "Groceries": groceriesSpending, "Online Shopping": onlineSpending,
+        "Dining": diningSpending, "Others": otherSpending
     }
     
     # get all cards in db
-    cards = col.find({})
+    cards = list(col.find({}))
     bestTwoPetrol, bestTwoGroceries, bestTwoOnline, bestTwoDining, bestTwoOther = LimitedHeap(2), LimitedHeap(2), LimitedHeap(2), LimitedHeap(2), LimitedHeap(2)
     card_to_total_cashback = {}
     
     # calculate cashback by category
     for card in cards:  # each card
-        for cat_group in card['categories']:    # each category
+        for cat_group in card['categories']:    # each category group
             if "Petrol" in cat_group["individual_categories"]:
                 cat_cashback = calculate_cashback_for_category(category_to_spend["Petrol"], cat_group["tier"])
-                bestTwoPetrol.push((-cat_cashback, card["name"]))
+                bestTwoPetrol.push((cat_cashback, card["name"]))
             if "Groceries" in cat_group["individual_categories"]:
                 cat_cashback = calculate_cashback_for_category(category_to_spend["Groceries"], cat_group["tier"])
-                bestTwoGroceries.push((-cat_cashback, card["name"]))
-            if "Online" in cat_group["individual_categories"]:
-                cat_cashback = calculate_cashback_for_category(category_to_spend["Online"], cat_group["tier"])
-                bestTwoOnline.push((-cat_cashback, card["name"]))
+                bestTwoGroceries.push((cat_cashback, card["name"]))
+            if "Online Shopping" in cat_group["individual_categories"]:
+                cat_cashback = calculate_cashback_for_category(category_to_spend["Online Shopping"], cat_group["tier"])
+                bestTwoOnline.push((cat_cashback, card["name"]))
             if "Dining" in cat_group["individual_categories"]:
                 cat_cashback = calculate_cashback_for_category(category_to_spend["Dining"], cat_group["tier"])
-                bestTwoDining.push((-cat_cashback, card["name"]))
-            if "Other" in cat_group["individual_categories"]:
-                cat_cashback = calculate_cashback_for_category(category_to_spend["Other"], cat_group["tier"])
-                bestTwoOther.push((-cat_cashback, card["name"])) 
+                bestTwoDining.push((cat_cashback, card["name"]))
+            if "Others" in cat_group["individual_categories"]:
+                cat_cashback = calculate_cashback_for_category(category_to_spend["Others"], cat_group["tier"])
+                bestTwoOther.push((cat_cashback, card["name"])) 
 
     # calculate total cashback for each card
     for card in cards:
@@ -81,7 +82,7 @@ def calculate(petrolSpending, groceriesSpending, onlineSpending, diningSpending,
                 totalSpendThisCategoryGrp += category_to_spend[individual_cat]
             total_cashback_per_card += calculate_cashback_for_category(totalSpendThisCategoryGrp, cat_group["tier"])
         card_to_total_cashback[card["name"]] = total_cashback_per_card
-    
+
     # get top 2 cards and cashback for each category
     bestTwoPetrolCards = bestTwoPetrol.get_heap()
     bestTwoGroceriesCards = bestTwoGroceries.get_heap()
@@ -89,7 +90,8 @@ def calculate(petrolSpending, groceriesSpending, onlineSpending, diningSpending,
     bestTwoDiningCards = bestTwoDining.get_heap()
     bestTwoOtherCards = bestTwoOther.get_heap()
     # get the top 2 cards overall by sorting card_to_total_cashback dict
-    bestTwoOverallCards = heapq.nlargest(2, card_to_total_cashback, key=card_to_total_cashback.get)
+    bestTwoOverallCards = heapq.nlargest(2, card_to_total_cashback.items(), key=lambda x: x[1])
+    bestTwoOverallCards = [(cashback, name) for name, cashback in bestTwoOverallCards]
 
     return {
         "bestTwoPetrolCards": bestTwoPetrolCards,
