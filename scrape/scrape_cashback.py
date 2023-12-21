@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from scrape_cashback_table import scrape_individual
+from scrape_cashback_table import scrape_individual, scrape_img
 import openai
 import pymongo
 import os
@@ -17,6 +17,7 @@ DB_PASS = os.getenv("DB_PASS")
 client = pymongo.MongoClient(f"mongodb+srv://{DB_USER}:{DB_PASS}@hentaicluster.hcelnlh.mongodb.net/?retryWrites=true&w=majority")
 db = client["cardCalc"]
 col = db["cashback"]
+colImg = db["cashbackImg"]
 
 url = "https://ringgitplus.com/en/credit-card/cashback/"
 
@@ -34,12 +35,15 @@ for li in li_tags:
     name = a_tag.text
     links_and_names[name] = link
     individual_table_rows = scrape_individual(link)
+    img_src = scrape_img(link)
     
     seen_pair, seen_categories = set(), set()
     
-    # if name is not in db, add it
+    # if name is not in dbs, add it
     if col.find_one({"name": name}) == None:
         col.insert_one({"name": name, "link": link, "categories": []})
+    if colImg.find_one({"name": name}) == None:
+        colImg.insert_one({"name": name, "img_src": img_src})
 
     categories = []
 

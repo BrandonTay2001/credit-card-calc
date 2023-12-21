@@ -15,6 +15,7 @@ DB_PASS = os.getenv("DB_PASS")
 client = pymongo.MongoClient(f"mongodb+srv://{DB_USER}:{DB_PASS}@hentaicluster.hcelnlh.mongodb.net/?retryWrites=true&w=majority")
 db = client["cardCalc"]
 col = db["cashback"]
+colImg = db["cashbackImg"]
 
 class LimitedHeap:
     def __init__(self, limit):
@@ -31,11 +32,15 @@ class LimitedHeap:
     def get_heap(self):
         return self.heap
 
+def get_image(card_name):
+    return colImg.find_one({"name": card_name})["img_src"]
+
 def calculate_cashback_for_category(spend_amount, tiers):
     cashback = 0
     for tier in tiers:
         if spend_amount >= tier["spend"][1]:
-            cashback += tier["monthly_cap"]
+            cashback += min(tier["monthly_cap"], 
+                            tier["cashback_percentage"] / 100 * (tier["spend"][1] - tier["spend"][0]))
         elif spend_amount >= tier["spend"][0] and spend_amount < tier["spend"][1]:
             cashback += min(tier["cashback_percentage"] / 100 * (spend_amount - tier["spend"][0]), 
                             tier["monthly_cap"])
@@ -43,7 +48,22 @@ def calculate_cashback_for_category(spend_amount, tiers):
     cashback = round(cashback, 2)  # Round to 2 decimal places
     return cashback
 
-def calculate(petrolSpending, groceriesSpending, onlineSpending, diningSpending, otherSpending):
+def format_cards(cards):
+    formatted_cards = []
+    for card in cards:
+        card_name = card[1]
+        card_cashback = card[0]
+        card_image = get_image(card_name)
+        formatted_card = {
+            "name": card_name,
+            "cashback_value": card_cashback,
+            "img_src": card_image,
+            "link": col.find_one({"name": card_name})["link"]
+        }
+        formatted_cards.append(formatted_card)
+    return formatted_cards
+
+def calculate_cashback(petrolSpending, groceriesSpending, onlineSpending, diningSpending, otherSpending):
     category_to_spend = {
         "Petrol": petrolSpending, "Groceries": groceriesSpending, "Online Shopping": onlineSpending,
         "Dining": diningSpending, "Others": otherSpending
@@ -92,6 +112,13 @@ def calculate(petrolSpending, groceriesSpending, onlineSpending, diningSpending,
     # get the top 2 cards overall by sorting card_to_total_cashback dict
     bestTwoOverallCards = heapq.nlargest(2, card_to_total_cashback.items(), key=lambda x: x[1])
     bestTwoOverallCards = [(cashback, name) for name, cashback in bestTwoOverallCards]
+
+    bestTwoPetrolCards = format_cards(bestTwoPetrolCards)
+    bestTwoGroceriesCards = format_cards(bestTwoGroceriesCards)
+    bestTwoOnlineCards = format_cards(bestTwoOnlineCards)
+    bestTwoDiningCards = format_cards(bestTwoDiningCards)
+    bestTwoOtherCards = format_cards(bestTwoOtherCards)
+    bestTwoOverallCards = format_cards(bestTwoOverallCards)
 
     return {
         "bestTwoPetrolCards": bestTwoPetrolCards,

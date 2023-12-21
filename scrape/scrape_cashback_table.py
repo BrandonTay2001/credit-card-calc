@@ -2,6 +2,20 @@ import requests
 from bs4 import BeautifulSoup
 import tinydb
 import re
+import pymongo
+from dotenv import load_dotenv
+
+from dotenv import load_dotenv, find_dotenv
+import os
+dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+load_dotenv(dotenv_path)
+
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+
+client = pymongo.MongoClient(f"mongodb+srv://{DB_USER}:{DB_PASS}@hentaicluster.hcelnlh.mongodb.net/?retryWrites=true&w=majority")
+db = client["cardCalc"]
+colImg = db["cashbackImg"]
 
 db = tinydb.TinyDB('category_mapping.json')
 mapping = db.all()
@@ -28,6 +42,7 @@ def transform_text(text):
     return [lower_bound, upper_bound]
 
 def scrape_individual(url):
+
     response = requests.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
 
@@ -82,3 +97,11 @@ def scrape_individual(url):
         tableList.append([entryCategories, cashback_percentage, monthly_cap, spend])
 
     return tableList
+
+def scrape_img(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    header = soup.find('header', class_='Hero product')
+    img_tag = header.find('img')
+    img_src = img_tag['src']
+    return img_src
