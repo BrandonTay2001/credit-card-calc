@@ -98,6 +98,45 @@ def scrape_individual(url):
 
     return tableList
 
+def construct_table(url):
+
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, "html.parser")
+
+    table_wrapper = soup.find_all("div", class_="table-wrapper")[0]
+    tbody = table_wrapper.find("tbody")
+    tr_tags = tbody.find_all("tr")
+
+    tableList = []
+
+    for i, tr in enumerate(tr_tags):
+        
+        category = tr.find("td").text
+        cashback_percentage = tr.find("td").find_next("td").text
+        monthly_cap = tr.find("td").find_next("td").find_next("td").text
+        spend = tr.find("td").find_next("td").find_next("td").find_next("td").text
+        
+        # remove comma from monthly_cap
+        monthly_cap = monthly_cap.replace(',', '')
+    
+        # clean the spend
+        spend = transform_text(spend)
+
+        if spend[1] == float('inf'):
+            spendText = f"RM{spend[0]}++"
+        else:
+            spendText = f"RM{spend[0]} - RM{spend[1]}"
+        
+        # Construct HTML table
+        tableList.append(f"<tr><td>{category}</td><td>{cashback_percentage}</td><td>{monthly_cap}</td><td>{spendText}</td></tr>")
+    
+    # Join the table rows
+    table_html = "<table><tr><th>Category</th><th>Cashback</th><th>Monthly Cap</th><th>When Spending Within</th></tr>"
+    table_html += "".join(tableList)
+    table_html += "</table>"
+    
+    return table_html
+
 def scrape_img(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -105,3 +144,5 @@ def scrape_img(url):
     img_tag = header.find('img')
     img_src = img_tag['src']
     return img_src
+
+print(construct_table("https://ringgitplus.com/en/credit-card/UOB-ONE-Card.html?filter=UOB"))
