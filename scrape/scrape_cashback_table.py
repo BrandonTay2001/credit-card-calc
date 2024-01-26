@@ -122,10 +122,7 @@ def construct_table(url):
         # clean the spend
         spend = transform_text(spend)
 
-        if spend[1] == float('inf'):
-            spendText = f"RM{spend[0]}++"
-        else:
-            spendText = f"RM{spend[0]} - RM{spend[1]}"
+        spendText = f"RM{spend[0]} - RM{spend[1]}"
         
         # Construct HTML table
         tableList.append(f"<tr><td>{category}</td><td>{cashback_percentage}</td><td>{monthly_cap}</td><td>{spendText}</td></tr>")
